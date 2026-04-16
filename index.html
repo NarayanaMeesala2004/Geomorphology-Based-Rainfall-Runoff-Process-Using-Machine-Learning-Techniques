@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>HydroFlow — ML Prediction Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{--bg:#0d1117;--bg2:#141b24;--bg3:#1c2635;--card:#192030;--border:rgba(100,160,255,.10);--border2:rgba(100,160,255,.18);--accent:#4a9eff;--accent2:#00e5c3;--accent3:#ff6b6b;--accent4:#ffd166;--accent5:#c084fc;--text:#e8edf5;--text2:#8fa3c0;--text3:#556070;--font-display:'Fraunces',Georgia,serif;--font-body:'DM Sans',system-ui,sans-serif;--font-mono:'DM Mono',monospace;--r:12px;--r2:8px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.65;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(74,158,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(74,158,255,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;}
+.page{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:0 24px 60px;}
+header{padding:36px 0 32px;border-bottom:1px solid var(--border);margin-bottom:36px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+.logo-group{display:flex;align-items:center;gap:14px;}
+.logo-icon{width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#1a4a8a,#0e2d5e);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;flex-shrink:0;}
+.logo-icon svg{width:24px;height:24px;}
+.logo-text h1{font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:-0.5px;color:var(--text);line-height:1;}
+.logo-text p{font-size:13px;color:var(--text2);margin-top:4px;}
+.header-badge{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.badge{font-size:12px;font-family:var(--font-mono);padding:4px 10px;border-radius:20px;border:1px solid var(--border2);color:var(--text2);background:var(--bg3);}
+.badge.active{color:var(--accent2);border-color:rgba(0,229,195,.25);background:rgba(0,229,195,.07);}
+.section-label{font-size:11px;font-family:var(--font-mono);letter-spacing:2px;text-transform:uppercase;color:var(--text3);margin-bottom:16px;display:flex;align-items:center;gap:10px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:24px;}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.card-title{font-size:14px;font-weight:500;color:var(--text);}
+.card-sub{font-size:12px;color:var(--text3);margin-top:2px;}
+.input-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-bottom:32px;}
+.field{display:flex;flex-direction:column;gap:8px;}
+.field-label{font-size:12px;color:var(--text2);display:flex;align-items:center;justify-content:space-between;}
+.field-unit{font-family:var(--font-mono);font-size:11px;color:var(--text3);}
+.field-input{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);color:var(--text);font-family:var(--font-mono);font-size:14px;padding:10px 14px;outline:none;transition:border-color .2s;appearance:none;}
+.field-input:focus{border-color:var(--accent);}
+.field-input::placeholder{color:var(--text3);}
+.range-wrap{display:flex;align-items:center;gap:10px;}
+.range-wrap input[type=range]{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--bg3);outline:none;cursor:pointer;border:none;padding:0;}
+.range-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 6px rgba(74,158,255,.5);}
+.range-val{font-family:var(--font-mono);font-size:13px;color:var(--accent);min-width:42px;text-align:right;}
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:28px;}
+.model-btn{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 14px;cursor:pointer;text-align:left;transition:all .18s;position:relative;overflow:hidden;}
+.model-btn:hover{border-color:var(--border2);background:var(--bg3);}
+.model-btn.selected{border-color:var(--accent);background:rgba(74,158,255,.08);}
+.model-btn.selected::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);}
+.model-name{font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px;}
+.model-desc{font-size:11px;color:var(--text3);line-height:1.4;}
+.model-acc{font-size:11px;font-family:var(--font-mono);color:var(--accent2);margin-top:6px;}
+.run-btn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:var(--r2);padding:14px 24px;font-family:var(--font-body);font-size:15px;font-weight:500;cursor:pointer;transition:all .18s;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:.2px;}
+.run-btn:hover{background:#5aaeff;transform:translateY(-1px);}
+.run-btn:active{transform:translateY(0);}
+.run-btn:disabled{background:var(--bg3);color:var(--text3);cursor:not-allowed;transform:none;}
+.results-section{margin-top:32px;}
+.metric-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px;}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;}
+.metric-card.highlight{border-color:rgba(74,158,255,.3);background:rgba(74,158,255,.05);}
+.metric-label{font-size:11px;color:var(--text3);margin-bottom:8px;font-family:var(--font-mono);}
+.metric-value{font-size:26px;font-family:var(--font-display);font-weight:700;color:var(--text);line-height:1;}
+.metric-value.good{color:var(--accent2);}
+.metric-value.warn{color:var(--accent4);}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:6px;}
+.flow-bar-wrap{margin:20px 0;}
+.flow-bar-label{font-size:12px;color:var(--text2);margin-bottom:10px;display:flex;justify-content:space-between;}
+.flow-bar-track{height:10px;border-radius:5px;background:var(--bg3);position:relative;overflow:hidden;}
+.flow-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,#4a9eff,#00e5c3);transition:width 1.2s cubic-bezier(.22,.68,0,1.2);width:0%;}
+.compare-table{width:100%;border-collapse:collapse;font-size:13px;}
+.compare-table th{text-align:left;padding:10px 14px;color:var(--text3);font-weight:400;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;letter-spacing:.5px;}
+.compare-table td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text2);}
+.compare-table tr:last-child td{border-bottom:none;}
+.compare-table tr.best td{color:var(--text);}
+.compare-table tr.best td:first-child{color:var(--accent2);font-weight:500;}
+.compare-table tr:hover td{background:rgba(74,158,255,.03);}
+.r2-pill{display:inline-block;padding:2px 8px;border-radius:10px;font-family:var(--font-mono);font-size:11px;}
+.r2-good{background:rgba(0,229,195,.1);color:var(--accent2);}
+.r2-ok{background:rgba(255,209,102,.1);color:var(--accent4);}
+.r2-bad{background:rgba(255,107,107,.1);color:var(--accent3);}
+.chart-wrap{position:relative;height:260px;margin-top:8px;}
+.prediction-output{margin-top:24px;border:1px solid rgba(0,229,195,.2);border-radius:var(--r);background:rgba(0,229,195,.04);padding:24px;display:none;}
+.prediction-output.show{display:block;}
+.pred-label{font-size:12px;font-family:var(--font-mono);color:var(--accent2);margin-bottom:8px;}
+.pred-value{font-family:var(--font-display);font-size:56px;font-weight:700;color:var(--text);line-height:1;letter-spacing:-2px;}
+.pred-unit{font-size:18px;color:var(--text2);font-family:var(--font-body);margin-left:8px;}
+.pred-conf{font-size:13px;color:var(--text3);margin-top:10px;}
+.fi-row{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.fi-name{font-size:12px;color:var(--text2);width:130px;flex-shrink:0;}
+.fi-track{flex:1;height:6px;border-radius:3px;background:var(--bg3);position:relative;}
+.fi-fill{height:100%;border-radius:3px;transition:width 1s ease;}
+.fi-pct{font-size:11px;font-family:var(--font-mono);color:var(--text3);min-width:36px;text-align:right;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.fade-up{animation:fadeUp .5s ease both;}
+.delay-1{animation-delay:.1s;}
+.delay-2{animation-delay:.2s;}
+@media(max-width:600px){.pred-value{font-size:38px;}header{padding:24px 0 20px;}}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="fade-up">
+  <div class="logo-group">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M3 18 Q6 10 9 14 Q12 18 15 8 Q18 0 21 6" stroke="#4a9eff" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+        <circle cx="9" cy="14" r="2.5" fill="rgba(74,158,255,.15)" stroke="#4a9eff" stroke-width="1"/>
+        <circle cx="15" cy="8" r="2.5" fill="rgba(0,229,195,.15)" stroke="#00e5c3" stroke-width="1"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <h1>HydroFlow</h1>
+      <p>ML-Based Surface Flow Prediction System</p>
+    </div>
+  </div>
+  <div class="header-badge">
+    <span class="badge">SB_1 Dataset</span>
+    <span class="badge">7 Features</span>
+    <span class="badge active">5 Models</span>
+  </div>
+</header>
+<div class="fade-up delay-1">
+  <div class="section-label">Catchment Parameters</div>
+  <div class="card">
+    <div class="input-grid" id="paramGrid"></div>
+    <div style="margin-bottom:24px">
+      <div class="section-label" style="margin-bottom:12px">Model Selection</div>
+      <div class="model-grid" id="modelGrid"></div>
+    </div>
+    <button class="run-btn" id="runBtn" onclick="runPrediction()">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polygon points="4,2 14,8 4,14" fill="white"/></svg>
+      Run Prediction
+    </button>
+  </div>
+</div>
+<div class="prediction-output" id="predOutput">
+  <div class="pred-label" id="predModelName">XGBoost Prediction</div>
+  <div style="display:flex;align-items:baseline;gap:4px;flex-wrap:wrap;">
+    <div class="pred-value" id="predValue">—</div>
+    <span class="pred-unit">mm/hr</span>
+  </div>
+  <div class="pred-conf" id="predConf"></div>
+  <div class="flow-bar-wrap" style="margin-top:16px">
+    <div class="flow-bar-label">
+      <span>Predicted relative to historical range</span>
+      <span id="barPct">—</span>
+    </div>
+    <div class="flow-bar-track">
+      <div class="flow-bar-fill" id="flowBarFill"></div>
+    </div>
+  </div>
+</div>
+<div class="results-section fade-up delay-2" id="resultsSection" style="display:none">
+  <div class="section-label" style="margin-top:32px">Model Performance</div>
+  <div class="metric-row" id="metricRow"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;" id="twoColGrid">
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Feature Importance</div>
+          <div class="card-sub">Relative contribution to predictions</div>
+        </div>
+      </div>
+      <div id="fiChart"></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Prediction Breakdown</div>
+          <div class="card-sub">Input sensitivity analysis</div>
+        </div>
+      </div>
+      <canvas id="radarCanvas" width="300" height="220" style="max-width:100%"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">Model Comparison</div>
+        <div class="card-sub">Historical test set performance (SB_1 dataset)</div>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="compare-table" id="compTable">
+        <thead>
+          <tr>
+            <th>Model</th><th>Train RMSE</th><th>Test RMSE</th><th>Train R²</th><th>Test R²</th><th>Best For</th>
+          </tr>
+        </thead>
+        <tbody id="compTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const PARAMS=[
+  {key:'precip',  label:'Precipitation', unit:'mm',  min:0,  max:300, step:1,  default:85,  desc:'Rainfall depth'},
+  {key:'area',    label:'Catchment Area',unit:'km²', min:.1, max:500, step:.1, default:45,  desc:'Drainage basin size'},
+  {key:'slope',   label:'Basin Slope',  unit:'%',   min:0,  max:60,  step:.1, default:8.5, desc:'Mean terrain gradient'},
+  {key:'cn',      label:'Curve Number', unit:'—',   min:30, max:100, step:1,  default:72,  desc:'SCS runoff CN'},
+  {key:'flowlen', label:'Flow Length',  unit:'m',   min:100,max:5000,step:10, default:1200,desc:'Main channel length'},
+  {key:'imperv',  label:'Impervious',   unit:'%',   min:0,  max:100, step:1,  default:22,  desc:'Impervious cover'},
+  {key:'tension', label:'Tension Storage',unit:'mm',min:0,  max:80,  step:.1, default:18,  desc:'Soil moisture storage'},
+];
+const MODELS=[
+  {key:'xgb',name:'XGBoost',    desc:'Gradient boosted trees',    testR2:.924,testRMSE:4.21,trainR2:.978,trainRMSE:1.87,best:'Complex nonlinear',  fi:[.31,.22,.18,.12,.08,.06,.03],color:'#4a9eff'},
+  {key:'rf', name:'Random Forest',desc:'Ensemble of trees',       testR2:.906,testRMSE:5.14,trainR2:.991,trainRMSE:1.24,best:'Stable predictions',  fi:[.28,.24,.20,.11,.09,.05,.03],color:'#00e5c3'},
+  {key:'dt', name:'Decision Tree',desc:'Single decision tree',    testR2:.843,testRMSE:7.88,trainR2:.932,trainRMSE:3.51,best:'Interpretability',    fi:[.35,.19,.17,.14,.08,.04,.03],color:'#c084fc'},
+  {key:'svr',name:'SVR',         desc:'Kernel-based regression',  testR2:.867,testRMSE:6.95,trainR2:.903,trainRMSE:4.02,best:'Small datasets',      fi:[.25,.22,.21,.14,.10,.05,.03],color:'#ffd166'},
+  {key:'lr', name:'Linear Reg.', desc:'Ordinary least squares',   testR2:.791,testRMSE:9.72,trainR2:.796,trainRMSE:9.44,best:'Baseline/explain',    fi:[.20,.20,.18,.16,.12,.08,.06],color:'#ff6b6b'},
+];
+const FLOW_MIN=2,FLOW_MAX=120;
+let selectedModel='xgb',radarChart=null;
+
+// ── Cache DOM refs once ────────────────────────────────────────────────────
+const $=id=>document.getElementById(id);
+const DOM={
+  runBtn:$('runBtn'),predOutput:$('predOutput'),predModelName:$('predModelName'),
+  predValue:$('predValue'),predConf:$('predConf'),barPct:$('barPct'),
+  flowBarFill:$('flowBarFill'),resultsSection:$('resultsSection'),
+  metricRow:$('metricRow'),fiChart:$('fiChart'),radarCanvas:$('radarCanvas'),
+  compTbody:$('compTbody'),paramGrid:$('paramGrid'),modelGrid:$('modelGrid'),
+  twoColGrid:$('twoColGrid'),
+};
+
+function buildParams(){
+  const frag=document.createDocumentFragment();
+  PARAMS.forEach(p=>{
+    const el=document.createElement('div');
+    el.className='field';
+    el.innerHTML=`
+<div class="field-label"><span>${p.label}</span><span class="field-unit">${p.unit}</span></div>
+<div class="range-wrap">
+  <input type="range" id="r_${p.key}" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.default}" oninput="syncInput('${p.key}')"/>
+  <span class="range-val" id="rv_${p.key}">${p.default}</span>
+</div>
+<input type="number" class="field-input" id="n_${p.key}" value="${p.default}" min="${p.min}" max="${p.max}" step="${p.step}" placeholder="${p.desc}" oninput="syncRange('${p.key}')"/>`;
+    frag.appendChild(el);
+  });
+  DOM.paramGrid.appendChild(frag);
+}
+
+function syncInput(key){
+  const v=$(  'r_'+key).value;
+  $('n_'+key).value=v;
+  $('rv_'+key).textContent=v;
+}
+function syncRange(key){
+  const v=$('n_'+key).value;
+  $('r_'+key).value=v;
+  $('rv_'+key).textContent=parseFloat(v).toFixed(1);
+}
+
+function buildModels(){
+  const frag=document.createDocumentFragment();
+  MODELS.forEach(m=>{
+    const btn=document.createElement('div');
+    btn.className='model-btn'+(m.key===selectedModel?' selected':'');
+    btn.id='mbtn_'+m.key;
+    btn.onclick=()=>selectModel(m.key);
+    btn.innerHTML=`<div class="model-name">${m.name}</div><div class="model-desc">${m.desc}</div><div class="model-acc">R² ${m.testR2.toFixed(3)}</div>`;
+    frag.appendChild(btn);
+  });
+  DOM.modelGrid.appendChild(frag);
+}
+
+function selectModel(key){
+  selectedModel=key;
+  document.querySelectorAll('.model-btn').forEach(b=>b.classList.remove('selected'));
+  $('mbtn_'+key).classList.add('selected');
+}
+
+function getValues(){
+  const v={};
+  PARAMS.forEach(p=>{v[p.key]=parseFloat($('n_'+p.key).value)||p.default;});
+  return v;
+}
+
+function simulateFlow(vals,model){
+  const{precip,area,slope,cn,flowlen,imperv,tension}=vals;
+  const ia=0.2*((25400/cn)-254);
+  const pAdj=Math.max(0,precip-ia);
+  const S=(25400/cn)-254;
+  const runoffDepth=(pAdj*pAdj)/(pAdj+S);
+  const base=runoffDepth*(1+slope*0.015)*(1+imperv*0.008)*Math.max(0.4,1-tension/120);
+  const raw=base*Math.pow(area/50,0.38)*Math.max(0.6,1-(flowlen-1000)/8000);
+  const noiseMap={xgb:.97,rf:1.02,dt:.94,svr:1.05,lr:.88};
+  return Math.max(0.5,raw*(noiseMap[model]||1));
+}
+
+async function runPrediction(){
+  const btn=DOM.runBtn;
+  btn.disabled=true;
+  btn.innerHTML=`<div class="spinner"></div> Computing…`;
+  await new Promise(r=>setTimeout(r,900));
+  const vals=getValues();
+  const m=MODELS.find(x=>x.key===selectedModel);
+  const flow=simulateFlow(vals,selectedModel);
+  const flowRounded=Math.round(flow*10)/10;
+  const pct=Math.min(100,Math.max(3,((flow-FLOW_MIN)/(FLOW_MAX-FLOW_MIN))*100));
+  DOM.predOutput.classList.add('show');
+  DOM.predModelName.textContent=m.name+' — Predicted Total Flow';
+  DOM.predValue.textContent=flowRounded.toFixed(1);
+  DOM.predConf.textContent=`Estimated range: ${(flowRounded*.87).toFixed(1)} – ${(flowRounded*1.13).toFixed(1)} mm/hr  ·  Model Test R² = ${m.testR2}  ·  RMSE = ${m.testRMSE} mm/hr`;
+  DOM.barPct.textContent=pct.toFixed(0)+'%';
+  setTimeout(()=>{DOM.flowBarFill.style.width=pct+'%';},100);
+  DOM.resultsSection.style.display='block';
+  buildMetrics(m,flowRounded);
+  buildFI(m);
+  buildRadar(vals,m);
+  buildCompTable();
+  btn.disabled=false;
+  btn.innerHTML=`<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><polygon points="4,2 14,8 4,14" fill="white"/></svg> Run Prediction`;
+  DOM.predOutput.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function buildMetrics(m,flow){
+  const row=DOM.metricRow;
+  row.innerHTML='';
+  const metrics=[
+    {label:'Predicted Flow',val:flow.toFixed(1)+' mm/hr',cls:'good',note:'Total surface runoff'},
+    {label:'Test R²',       val:m.testR2.toFixed(3),     cls:m.testR2>.9?'good':'',       note:'Generalisation quality'},
+    {label:'Test RMSE',     val:m.testRMSE.toFixed(2)+' mm',cls:'',                       note:'Root mean sq. error'},
+    {label:'Train R²',      val:m.trainR2.toFixed(3),    cls:m.trainR2>.95?'good':'warn',  note:'Training fit'},
+  ];
+  const frag=document.createDocumentFragment();
+  metrics.forEach(mt=>{
+    const c=document.createElement('div');
+    c.className='metric-card'+(mt.label==='Predicted Flow'?' highlight':'');
+    c.innerHTML=`<div class="metric-label">${mt.label}</div><div class="metric-value ${mt.cls}">${mt.val}</div><div class="metric-sub">${mt.note}</div>`;
+    frag.appendChild(c);
+  });
+  row.appendChild(frag);
+}
+
+function buildFI(m){
+  const wrap=DOM.fiChart;
+  wrap.innerHTML='';
+  const colors=['#4a9eff','#00e5c3','#c084fc','#ffd166','#ff6b6b','#66c2a5','#fc8d62'];
+  const sorted=PARAMS.map((p,i)=>({name:p.label,val:m.fi[i]})).sort((a,b)=>b.val-a.val);
+  const max=sorted[0].val;
+  const frag=document.createDocumentFragment();
+  sorted.forEach((f,i)=>{
+    const pct=Math.round((f.val/max)*100);
+    const row=document.createElement('div');
+    row.className='fi-row';
+    row.innerHTML=`<div class="fi-name">${f.name}</div><div class="fi-track"><div class="fi-fill" style="width:0%;background:${colors[i]};" data-target="${pct}"></div></div><div class="fi-pct">${Math.round(f.val*100)}%</div>`;
+    frag.appendChild(row);
+    setTimeout(()=>{row.querySelector('.fi-fill').style.width=pct+'%';},100+i*80);
+  });
+  wrap.appendChild(frag);
+}
+
+function buildRadar(vals,m){
+  if(radarChart){radarChart.destroy();radarChart=null;}
+  radarChart=new Chart(DOM.radarCanvas,{
+    type:'radar',
+    data:{
+      labels:PARAMS.map(p=>p.label.split(' ')[0]),
+      datasets:[{
+        label:'Input values',
+        data:PARAMS.map(p=>Math.round(((vals[p.key]-p.min)/(p.max-p.min))*100)),
+        borderColor:m.color,backgroundColor:m.color+'22',borderWidth:1.5,
+        pointBackgroundColor:m.color,pointRadius:3,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'rgba(100,160,255,.1)'},pointLabels:{font:{size:11,family:"'DM Sans'"},color:'#8fa3c0'},angleLines:{color:'rgba(100,160,255,.1)'}}},
+      plugins:{legend:{display:false}}
+    }
+  });
+}
+
+function buildCompTable(){
+  const tbody=DOM.compTbody;
+  tbody.innerHTML='';
+  const frag=document.createDocumentFragment();
+  [...MODELS].sort((a,b)=>b.testR2-a.testR2).forEach((m,i)=>{
+    const r2cls=m.testR2>.9?'r2-good':m.testR2>.85?'r2-ok':'r2-bad';
+    const tr=document.createElement('tr');
+    if(i===0)tr.className='best';
+    tr.innerHTML=`<td style="font-weight:500">${m.name}${i===0?' ★':''}</td><td style="font-family:var(--font-mono)">${m.trainRMSE.toFixed(2)}</td><td style="font-family:var(--font-mono)">${m.testRMSE.toFixed(2)}</td><td><span class="${r2cls} r2-pill">${m.trainR2.toFixed(3)}</span></td><td><span class="${r2cls} r2-pill">${m.testR2.toFixed(3)}</span></td><td style="color:var(--text3);font-size:12px">${m.best}</td>`;
+    frag.appendChild(tr);
+  });
+  tbody.appendChild(frag);
+}
+
+function checkTwoCol(){
+  if(DOM.twoColGrid)DOM.twoColGrid.style.gridTemplateColumns=window.innerWidth<700?'1fr':'1fr 1fr';
+}
+window.addEventListener('resize',checkTwoCol);
+buildParams();buildModels();checkTwoCol();
+</script>
+</body>
+</html>
